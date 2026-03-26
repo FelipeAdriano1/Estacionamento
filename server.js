@@ -1,16 +1,15 @@
-import express, { Router } from 'express';
+import express from 'express';
 import env from './dotenv.js';
 
-import userRoute from './routes/users/userRoute.js'
+import userRoute from './routes/users/userRoute.js';
+import captureSyntaxError from './errors/SyntaxError.js';
 
 const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use("/api", userRoute);
-app.use((error, req, res, next) => {
-    if (error instanceof SyntaxError && error.status === 400 && 'body' in error) return res.status(400).send({ message: "JSON mal formatado." });
-})
+app.use(captureSyntaxError);
 
 app.listen(env.PORT, (error) => {
     if (error) console.log(error);

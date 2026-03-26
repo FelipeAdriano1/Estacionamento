@@ -3,13 +3,15 @@ export default function validateSchema(schema, body) {
 
     for (const key in schema) {
         const rules = schema[key];
-        const value = body[key];
+        const value = body[key]; //E se não existir?
 
         for (const rule of rules) {
             const error = rule(value);
+
             if (error) {
                 if (!errors[key]) errors[key] = [];
                 errors[key].push(error);
+                break;
             }
         }
     }
