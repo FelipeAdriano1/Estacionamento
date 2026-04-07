@@ -1,63 +1,99 @@
 import { SIGN_STRING } from "./sign.js";
+import { SIGN_RULE_STRING } from "./sign.js";
 
-export default function string() {
-    const rules = [];
-
+function string() {
+    const rules = [isString()]; //ALTA PERSISTÊNCIA EM MEMÓRIA: EXISTE DESDE O MOMENTO DA CHAMADA DE STRING ATÉ SEU RETORNO NO parse().
+    let lock = false;
     return {
-        min(value) {
-            const fnMin = v => v.length >= value ?
-                { ok: true }
-                :
-                {
-                    code: "string.min",
-                    message: `Tamanho da String não atinge mínimo definido.`,
-                    data: {
-                        min: value,
-                        received: v.length
-                    }
-                };
-
-            rules.push(fnMin);
-            return this;
-        },
-
-        max(value) {
-            const fnMax = v => v.length <= value ?
-                { ok: true }
-                :
-                {
-                    code: "string.max",
-                    message: `Tamanho da String excede parâmetros definidos.`,
-                    data: {
-                        max: value,
-                        received: v.length
-                    }
-                };
-
-            rules.push(fnMax);
+        use(rule) {
+            if (lock) throw new Error("Não é possível adicionar regras após parse()"); //POSSO PENSAR EM PADRONIZAR ESSE ERRO ATRAVÉS DE UMA CLASSE DE ERRO PERSONALIZADO.
+            if (typeof rule === 'function' && rule[SIGN_RULE_STRING] && rule[SIGN_RULE_STRING]?.type === 'string') rules.push(rule);
             return this;
         },
         parse(value) {
-            const result = { success: true, errors: [] };
-            if (typeof value !== 'string') {
-                result.success = false,
-                result.errors.push({
-                    code: "string.format",
-                    message: `Valor não é uma string.`,
-                    data: {
-                        format: "String",
-                        received: `${typeof value}`
+            lock = true;
+            const errors = [];
+
+            for (const fn of rules) {
+                const res = fn(value);
+                if (res !== true) {
+                    errors.push(res);
+                    if (res.code === 'string.format') {
+                        break;
                     }
-                });
-                return result;
+                }
             }
 
-            rules.forEach((val) => {
-                let helper = val(value);
-                if (helper.ok === false) result.errors.push(helper), result.success = false;
-            });
-            return result;
+            return {
+                success: errors.length === 0,
+                errors
+            };
         },
         [SIGN_STRING]: true
     }
 }
+
+function isString() {
+    const fnIsString = (value) => typeof value === 'string' ? true
+        :
+        {
+            ok: false,
+            code: 'string.format',
+            message: "Valor não é string.",
+            data: {
+                expected: `[object String]`,
+                received: `${Object.prototype.toString.call(value)}`
+            }
+        }
+
+    fnIsString[SIGN_RULE_STRING] = {
+        type: 'string',
+        name: 'isString'
+    }
+
+    return fnIsString;
+}
+
+function min(value) {
+    const fnMin = (v) => v.length >= value ? true
+        :
+        {
+            ok: false,
+            code: 'string.min',
+            message: "Tamanho da string não atinge mínimo permitido",
+            data: {
+                expected: `${value} caracteres.`,
+                received: `${v.length} caracteres.`
+            }
+        }
+
+    fnMin[SIGN_RULE_STRING] = {
+        type: 'string',
+        name: 'min'
+    }
+
+    return fnMin;
+}
+
+function max(value) {
+    const fnMax = (v) => v.length <= value ? true
+        :
+        {
+            ok: false,
+            code: 'string.max',
+            message: "Tamanho da string excede máximo permitido",
+            data: {
+                expected: `${value} caracteres.`,
+                received: `${v.length} caracteres.`
+            }
+        }
+
+    fnMax[SIGN_RULE_STRING] = {
+        type: 'string',
+        name: 'max'
+    }
+
+    return fnMax;
+}
+
+export { string, min, max };

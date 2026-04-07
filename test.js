@@ -1,31 +1,16 @@
-"use strict";
-
-import { SIGN_STRING } from "./types/sign.js";
-import { string, min, max } from './types/TypeString.js';
-
-function isPlainObject(value) {
-    return (
-        typeof value === "object" && value !== null && Object.prototype.toString.call(value) === '[object Object]'
-    );
-}
-
-function isTypeFunction(value) {
-    return (
-        typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype && value[SIGN_STRING] === true
-    )
-}
-
 function createSchema(schema) {
-    if (!isPlainObject(schema)) return {
-        code: 'schema.format',
-        message: 'Schema deve ser um objeto JS válido.',
-        data: {
-            expected: '[object Object]',
-            received: `${Object.prototype.toString.call(schema)}`
-        }
-        //OU throw new Error();
-    };
+    if (!isPlainObject(schema)) {
+        return {
+            code: "schema.format",
+            message: "Schema deve ser um objeto JS válido.",
+            data: {
+                expected: "[object Object]",
+                received: Object.prototype.toString.call(schema)
+            }
+        };
+    }
 
+    // valida estrutura do schema uma vez só
     for (const [key, validator] of Object.entries(schema)) {
         if (!isTypeFunction(validator)) {
             return {
@@ -90,14 +75,3 @@ function createSchema(schema) {
         }
     };
 }
-
-const schema = createSchema(
-    {
-        name: string().use(min(2)).use(max(6)),
-        phone: string().use(min(9)).use(max(11))
-    }
-);
-
-console.log("RESULTADO DO SCHEMA:", schema.parse({
-    name: "Felipe"
-}));
