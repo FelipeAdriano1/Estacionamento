@@ -31,7 +31,7 @@ function generateCode() {
 
     generateSequence();
 
-    if (id.length > 6 || id.length !== 5) throw new GenerateIDError();
+    if (id.length > 6 || id.length !== 6) throw new GenerateIDError();
     return id.join('');
 }
 

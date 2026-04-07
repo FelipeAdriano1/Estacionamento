@@ -1,21 +1,24 @@
 import express from 'express';
 import env from './dotenv.js';
 
-import rotasUsuario from './routes/users/userRoutes.js';
-import middlewareUsuario from './middlewares/userMiddleware.js';
+import userRoutes from './routes/users/userRoutes.js';
 
-import capturarSyntaxError from './errors/captureSyntaxError.js';
-import capturarError from './errors/captureGenerateIDError.js';
+import captureSyntaxError from './errors/captureSyntaxError.js';
+import captureGenerateIDError from './errors/captureGenerateIDError.js';
 
 const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use("/api", middlewareUsuario, rotasUsuario);
-app.use(capturarSyntaxError);
-app.use(capturarError);
 
-app.listen(env.PORT, (error) => {
+app.use("/api/users", userRoutes);
+
+app.use(captureSyntaxError);
+app.use(captureGenerateIDError);
+//MÉTODOS DE CAPTURA ESTÃO REGISTRADOS GLOBALMENTE EM app.use;
+//NÃO SERIA MAIS RECOMENDÁVEL REGISTRA-LOS EM router.use?
+
+app.listen(env.PORT, '0.0.0.0', (error) => {
     if (error) console.log(error);
     console.log(`Servidor Express rodando na porta ${env.PORT}`);
-});
+}); 
