@@ -1,7 +1,4 @@
-"use strict";
-
-import { SIGN_STRING } from "./types/sign.js";
-import { string, min, max } from './types/TypeString.js';
+import { SIGN_NUMBER, SIGN_OBJECT, SIGN_STRING } from "./types/sign.js";
 
 function isPlainObject(value) {
     return (
@@ -11,11 +8,14 @@ function isPlainObject(value) {
 
 function isTypeFunction(value) {
     return (
-        typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype && value[SIGN_STRING] === true
+        typeof value === 'object' &&
+        value !== null &&
+        Object.getPrototypeOf(value) === Object.prototype &&
+        value[SIGN_STRING] === true || value[SIGN_NUMBER] === true || value[SIGN_OBJECT] === true
     )
 }
 
-function createSchema(schema) {
+export default function createSchema(schema) {
     if (!isPlainObject(schema)) return {
         code: 'schema.format',
         message: 'Schema deve ser um objeto JS válido.',
@@ -90,14 +90,3 @@ function createSchema(schema) {
         }
     };
 }
-
-const schema = createSchema(
-    {
-        name: string().use(min(2)).use(max(6)),
-        phone: string().use(min(9)).use(max(11))
-    }
-);
-
-console.log("RESULTADO DO SCHEMA:", schema.parse({
-    name: "Felipe"
-}));

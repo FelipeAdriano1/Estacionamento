@@ -96,4 +96,31 @@ function max(value) {
     return fnMax;
 }
 
-export { string, min, max };
+function regex(rgx, options = {}) {
+    const regex = new RegExp(rgx);
+
+    const fnRegex = (v) => regex.test(v)
+        ? true
+        : {
+            ok: false,
+            code: 'string.regex',
+            message: options.message || "String não segue formato esperado.",
+            data: {
+                expected: options.expected || String(rgx),
+                received: v
+            }
+        };
+
+    fnRegex[SIGN_RULE_STRING] = {
+        type: 'string',
+        name: 'regex'
+    }
+
+    return fnRegex;
+}
+
+//PROBLEMA: SE A FUNÇÃO NÃO POSSUIR SIGN_RULE_STRING, O parse() NÃO EXECUTA ESSA FUNÇÃO.
+//O USUÁRIO REGISTRA UMA FUNÇÃO E ESPERA QUE SUA VALIDAÇÃO SEJA APLICADA AO CAMPO DO JSON,
+//MAS ISSO NÃO ACONTECE SE A FUNÇÃO NÃO FOR RECONHECIDA.
+
+export { string, min, max, regex };
