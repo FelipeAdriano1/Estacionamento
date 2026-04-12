@@ -3,8 +3,8 @@ import { PORT } from './dotenv.js';
 
 import signupRoute from './routes/users/signup.js';
 
-import captureSyntaxError from './errors/captureSyntaxError.js';
-import captureGenerateIDError from './errors/captureGenerateIDError.js';
+import captureSyntaxError from './errors/errorHandlers/captureSyntaxError.js';
+import captureSanitizeError from './errors/errorHandlers/captureSanitizeError.js';
 
 const app = express();
 
@@ -15,7 +15,7 @@ app.use("/api/users", signupRoute);
 app.use("api/vehicles", () => { });
 
 app.use(captureSyntaxError);
-app.use(captureGenerateIDError);
+app.use(captureSanitizeError);
 //MÉTODOS DE CAPTURA ESTÃO REGISTRADOS GLOBALMENTE EM app.use;
 //NÃO SERIA MAIS RECOMENDÁVEL REGISTRA-LOS EM router.use?
 

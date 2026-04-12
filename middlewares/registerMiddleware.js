@@ -1,55 +1,54 @@
-//SANITIZAÇÃO
+import SanitizeError from '../errors/errorClasses/SanitizeError.js';
 
+//SANITIZAÇÃO
 //CASOS
 /*
-CASO 1:
-    {
-        name: "Felipe", --> DEVE SER STRING;
-        phone: "19 9 9999-9999" --> DEVE SER STRING;
-    }
+{
+    CASO 1: body | rules = undefined;
+    CASO 2: body | rules = {};
+    RESULTADO: Em ambos os casos irei imediatamente retornar um objeto com detalhes do erro.
+}
 */
+function sanitize(body, rules) {
+    const result = { success: true, errors: [] };
+    if (!body || Object.prototype.toString.call(body) !== '[object Object]' || Object.keys(body).length === 0) {
+        result.success = false;
+        result.errors.push({
+            code: "body.format",
+            field: 'object body',
+            message: "body inválido",
+        });
 
+        return result;
+    }
+
+    if (!rules || Object.prototype.toString.call(rules) !== '[object Object]' || Object.keys(rules).length === 0) {
+        result.success = false;
+        result.errors.push({
+            code: "rules.format",
+            field: 'object rules',
+            message: "rules inválido",
+        });
+
+        return result;
+    }
+
+    return result;
+}
+
+//CASOS
+/* 
+{
+    CASO 1: req.body | rules = undefined;
+    CASO 2: req.body | rules = {};
+}
+*/
 export default function sanitizeBodyUser(req, res, next) { //VERIFICAR TIPO DO VALOR E TRATAR FORMATO GERAL.
-    const test = sanitize(req.body, {
-        name: (v) => typeof v === 'number' ? v.trim() : '',
-        phone: (v) => typeof v === 'string' ?v.trim() : ''
-    });
-
-    console.log(test);
-
+    const resultSanitize = sanitize(req.body, {});
+    if (!resultSanitize.success) throw new SanitizeError(resultSanitize.errors);
     next();
 }
 
-function sanitize(body, rules) {
-    const result = {};
-    const errors = [];
-
-    for (const key in body) {
-        if (!rules[key]) {
-            errors.push({
-                code: `${key}.unknown`,
-                message: "Chave não encontrada no body."
-            });
-        }
-    }
-
-    for (let [key, fn] of Object.entries(rules)) {
-        const value = body[key];
-
-        try {
-            result[key] = fn(value);
-        }
-        catch {
-            errors.push({
-                code: `${key}.sanitize`,
-                message: "Erro ao sanitizar valor",
-                data: { received: value }
-            });
-        }
-    }
-
-    return { data: result, errors };
-}
 
 //NORMALIZAÇÃO
 //CASOS
