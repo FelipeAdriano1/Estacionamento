@@ -10,15 +10,12 @@ CASO 1:
 */
 
 export default function sanitizeBodyUser(req, res, next) { //VERIFICAR TIPO DO VALOR E TRATAR FORMATO GERAL.
-    const resultSanitize = sanitize(req.body, {
-        name: (v) => typeof v === 'string' ? v.trim() : '',
-        phone: (v) => typeof v === 'string' ? v.trim() : ''
-    });
-    const resultNormalize = normalize(resultSanitize.data, {
-        phone: (v) => v.replace(/\D/g, '')
+    const test = sanitize(req.body, {
+        name: (v) => typeof v === 'number' ? v.trim() : '',
+        phone: (v) => typeof v === 'string' ?v.trim() : ''
     });
 
-    console.log(resultNormalize);
+    console.log(test);
 
     next();
 }
@@ -31,7 +28,7 @@ function sanitize(body, rules) {
         if (!rules[key]) {
             errors.push({
                 code: `${key}.unknown`,
-                message: "Chave não permitida"
+                message: "Chave não encontrada no body."
             });
         }
     }
@@ -41,7 +38,8 @@ function sanitize(body, rules) {
 
         try {
             result[key] = fn(value);
-        } catch {
+        }
+        catch {
             errors.push({
                 code: `${key}.sanitize`,
                 message: "Erro ao sanitizar valor",
@@ -80,7 +78,7 @@ function normalize(body, rules) {
         result[key] = fn(body[key]);
     }
 
-    return {result, errors};
+    return { result, errors };
 }
 
 //VALIDAÇÃO
