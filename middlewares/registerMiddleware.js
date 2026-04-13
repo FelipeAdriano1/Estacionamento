@@ -7,49 +7,85 @@ import SanitizeError from '../errors/errorClasses/SanitizeError.js';
     CASO 1: body | rules = undefined;
     CASO 2: body | rules = {};
     RESULTADO: Em ambos os casos irei imediatamente retornar um objeto com detalhes do erro.
+
+    CASO 3: { key: value, key :{ key: value } } SANITIZAÇÃO EM PROFUNDIDADE.
+        CASO 3.1: { name: "string", phone: "string", age: "number", address: {number: "number"} }; type = { number: "number" }; bodyValue = { number: 84 };
+        PARA VALIDAÇÃO EM PROFUNDIDADE, 'type' E 'bodyValue' PRECISAM SER OBJETO.
+
 }
 */
 function sanitize(body, rules) {
     const result = { success: true, errors: [] };
-    const bodySanitized = {};
-    const operations = {
-        string: (v) => v.trim(),
-        number: (v) => v > 0,
-        object: (v) => typeof v === 'object'
-    }
+    const isObj = (obj) => { return Object.prototype.toString.call(obj) === '[object Object]' };
+    const hasKeys = (obj) => { return Object.keys(obj).length > 0 };
+    const getType = (v) => { return Object.prototype.toString.call(v) }
 
-    if (!body || Object.prototype.toString.call(body) !== '[object Object]' || Object.keys(body).length === 0) {
+    if (!isObj(body) || !hasKeys(body)) {
         result.success = false;
         result.errors.push({
-            code: "body.format.",
-            field: 'object body.',
-            message: "body inválido.",
+            code: "body.format",
+            field: 'body',
+            message: "body ausente ou vazio.",
+            expected: "object",
+            received: body
+        });
+
+        return result;
+    }
+    if (!isObj(rules) || !hasKeys(rules)) {
+        result.success = false;
+        result.errors.push({
+            code: "rules.format",
+            field: 'rules',
+            message: "rules ausente ou vazio.",
+            expected: "object",
+            received: rules
         });
 
         return result;
     }
 
-    if (!rules || Object.prototype.toString.call(rules) !== '[object Object]' || Object.keys(rules).length === 0) {
-        result.success = false;
-        result.errors.push({
-            code: "rules.format.",
-            field: 'object rules.',
-            message: "rules inválido.",
-        });
+    for (const [key, type] of Object.entries(rules)) {
+        const bodyValue = body[key];
 
-        return result;
-    }
+        if (isObj(type)) {
+            if (!isObj(bodyValue)) {
+                result.success = false,
+                    result.errors.push({
+                        code: `${key}.format`,
+                        field: key,
+                        message: "Esperado um objeto.",
+                        expected: "object",
+                        received: typeof bodyValue
+                    });
+                continue;
+            }
 
-    for (const [key, value] of Object.entries(rules)) {
-        if (typeof body[key] === value) bodySanitized[key] = operations[value](body[key]); //E SE O VALOR NÃO SEGUIR O FORMATO ESPERADO???
-        else result.success = false,
+            const nested = sanitize(bodyValue, type);
+            if (!nested.success) {
+                result.success = false,
+                    nested.errors.forEach((err) => {
+                        result.errors.push({
+                            ...err,
+                            field: `${key}.${err.field}`
+                        })
+                    })
+            }
+            continue;
+        };
+
+        if (typeof bodyValue !== type) {
+            result.success = false;
             result.errors.push({
-                code: `${key}.format.`,
+                code: `${key}.format`,
                 field: key,
-                message: "tipo inválido."
+                message: "Tipo do campo é diferente.",
+                expected: type,
+                received: typeof bodyValue
             });
+        }
     }
-    console.log(bodySanitized);
+
     return result;
 }
 
@@ -61,9 +97,10 @@ function sanitize(body, rules) {
 }
 */
 export default function sanitizeBodyUser(req, res, next) { //VERIFICAR TIPO DO VALOR E TRATAR FORMATO GERAL.
-    const resultSanitize = sanitize(req.body, { name: "string", phone: "string", age: "number" });
+    const resultSanitize = sanitize(req.body, { name: "string", phone: "string", age: "number", address: { number: "number" } });
+    console.log("[RESULT SANITIZE]:", resultSanitize);
     if (!resultSanitize.success) throw new SanitizeError(resultSanitize.errors);
-    next();
+    else next();
 }
 
 
