@@ -11,12 +11,19 @@ import SanitizeError from '../errors/errorClasses/SanitizeError.js';
 */
 function sanitize(body, rules) {
     const result = { success: true, errors: [] };
+    const bodySanitized = {};
+    const operations = {
+        string: (v) => v.trim(),
+        number: (v) => v > 0,
+        object: (v) => typeof v === 'object'
+    }
+
     if (!body || Object.prototype.toString.call(body) !== '[object Object]' || Object.keys(body).length === 0) {
         result.success = false;
         result.errors.push({
-            code: "body.format",
-            field: 'object body',
-            message: "body inválido",
+            code: "body.format.",
+            field: 'object body.',
+            message: "body inválido.",
         });
 
         return result;
@@ -25,14 +32,24 @@ function sanitize(body, rules) {
     if (!rules || Object.prototype.toString.call(rules) !== '[object Object]' || Object.keys(rules).length === 0) {
         result.success = false;
         result.errors.push({
-            code: "rules.format",
-            field: 'object rules',
-            message: "rules inválido",
+            code: "rules.format.",
+            field: 'object rules.',
+            message: "rules inválido.",
         });
 
         return result;
     }
 
+    for (const [key, value] of Object.entries(rules)) {
+        if (typeof body[key] === value) bodySanitized[key] = operations[value](body[key]); //E SE O VALOR NÃO SEGUIR O FORMATO ESPERADO???
+        else result.success = false,
+            result.errors.push({
+                code: `${key}.format.`,
+                field: key,
+                message: "tipo inválido."
+            });
+    }
+    console.log(bodySanitized);
     return result;
 }
 
@@ -44,7 +61,7 @@ function sanitize(body, rules) {
 }
 */
 export default function sanitizeBodyUser(req, res, next) { //VERIFICAR TIPO DO VALOR E TRATAR FORMATO GERAL.
-    const resultSanitize = sanitize(req.body, {});
+    const resultSanitize = sanitize(req.body, { name: "string", phone: "string", age: "number" });
     if (!resultSanitize.success) throw new SanitizeError(resultSanitize.errors);
     next();
 }
